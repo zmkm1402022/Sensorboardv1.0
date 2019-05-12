@@ -46,4 +46,5 @@
 ..\obj\can.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\can.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\can.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\can.o: ..\HARDWARE\MPU9250\MPU9250.h
 ..\obj\can.o: ..\HARDWARE\CAN\can.h

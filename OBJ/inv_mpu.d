@@ -49,5 +49,6 @@
 ..\obj\inv_mpu.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\inv_mpu.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\inv_mpu.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\inv_mpu.o: ..\HARDWARE\MPU9250\MPU9250.h
 ..\obj\inv_mpu.o: ..\HARDWARE\MPU9250\include\log.h
 ..\obj\inv_mpu.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdarg.h

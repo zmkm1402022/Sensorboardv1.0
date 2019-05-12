@@ -19,7 +19,7 @@
 #include "core_cm3.h"
 #include "ultrasonic.h"
 #include "DS1302.h"
-
+#include "MPU9250.h"
 
 
 
@@ -111,6 +111,15 @@ typedef struct
 typedef struct
 {
 	u8 imu_Reg_context[4];
+	short gyro[3];
+	short accel_short[3];
+	short sensors;
+	unsigned char more;
+	long accel[3];
+	long quat[4];
+	long temperature;
+	unsigned long sensor_timestamp;
+	u8 ID;
 
 }GlobMPU9250;
 

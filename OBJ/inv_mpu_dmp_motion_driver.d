@@ -49,6 +49,7 @@
 ..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\MPU9250\MPU9250.h
 ..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\MPU9250\inv_mpu_dmp_motion_driver.h
 ..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\MPU9250\dmpKey.h
 ..\obj\inv_mpu_dmp_motion_driver.o: ..\HARDWARE\MPU9250\dmpmap.h

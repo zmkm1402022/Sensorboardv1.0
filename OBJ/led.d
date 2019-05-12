@@ -46,3 +46,4 @@
 ..\obj\led.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\led.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\led.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\led.o: ..\HARDWARE\MPU9250\MPU9250.h

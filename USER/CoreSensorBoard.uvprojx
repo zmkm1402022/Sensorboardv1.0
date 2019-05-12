@@ -373,7 +373,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_HD,USE_STDPERIPH_DRIVER,EMPL_TARGET_STM32F4,MPU9250</Define>
               <Undefine></Undefine>
-              <IncludePath>..\USER;..\CORE;..\STM32F10x_FWLib\inc;..\SYSTEM\delay;..\SYSTEM\sys;..\SYSTEM\usart;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\HARDWARE\LED;..\HARDWARE\TIMER;..\HARDWARE\ADC;..\HARDWARE\CAN;..\HARDWARE\DS18B20;..\HARDWARE\DS1302;..\HARDWARE\IIC;..\HARDWARE\Ultrasonic;..\HARDWARE\WDG;..\SYSTEM;..\USER;..\FreeRTOS\SystemView\Src\Config;..\FreeRTOS\SystemView\Src\FreeRTOSV9;..\FreeRTOS\SystemView\Src\SEGGER;..\HARDWARE\MPU9250\include</IncludePath>
+              <IncludePath>..\USER;..\CORE;..\STM32F10x_FWLib\inc;..\SYSTEM\delay;..\SYSTEM\sys;..\SYSTEM\usart;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\HARDWARE\LED;..\HARDWARE\TIMER;..\HARDWARE\ADC;..\HARDWARE\CAN;..\HARDWARE\DS18B20;..\HARDWARE\DS1302;..\HARDWARE\IIC;..\HARDWARE\Ultrasonic;..\HARDWARE\WDG;..\SYSTEM;..\USER;..\FreeRTOS\SystemView\Src\Config;..\FreeRTOS\SystemView\Src\FreeRTOSV9;..\FreeRTOS\SystemView\Src\SEGGER;..\HARDWARE\MPU9250\include;..\HARDWARE\MPU9250\mllite;..\HARDWARE\MPU9250\eMPL-hal;..\HARDWARE\MPU9250</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -485,6 +485,21 @@
               <FileName>inv_mpu_dmp_motion_driver.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\MPU9250\inv_mpu_dmp_motion_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>MPU9250.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\MPU9250\MPU9250.c</FilePath>
+            </File>
+            <File>
+              <FileName>ml_math_func.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\MPU9250\mllite\ml_math_func.c</FilePath>
+            </File>
+            <File>
+              <FileName>data_builder.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\MPU9250\mllite\data_builder.c</FilePath>
             </File>
           </Files>
         </Group>

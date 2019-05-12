@@ -44,6 +44,7 @@
 ..\obj\main.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\main.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\main.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\main.o: ..\HARDWARE\MPU9250\MPU9250.h
 ..\obj\main.o: ..\HARDWARE\LED\led.h
 ..\obj\main.o: ..\FreeRTOS\include\FreeRTOS.h
 ..\obj\main.o: ..\FreeRTOS\include\FreeRTOSConfig.h
@@ -67,3 +68,5 @@
 ..\obj\main.o: ..\HARDWARE\MPU9250\include\stdint_invensense.h
 ..\obj\main.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\errno.h
 ..\obj\main.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\limits.h
+..\obj\main.o: ..\HARDWARE\MPU9250\inv_mpu_dmp_motion_driver.h
+..\obj\main.o: ..\HARDWARE\MPU9250\mllite\ml_math_func.h

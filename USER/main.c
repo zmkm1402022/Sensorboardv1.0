@@ -10,6 +10,8 @@
 #include "SEGGER_SYSVIEW.h"
 #include "inv_mpu.h"
 #include "data_builder.h"
+#include "inv_mpu_dmp_motion_driver.h"
+#include "ml_math_func.h"
 struct rx_s {
     unsigned char header[3];
     unsigned char cmd;
@@ -36,6 +38,7 @@ struct platform_data_s {
     signed char orientation[9];
 };
 
+struct int_param_s int_param;
 /* The sensors can be mounted onto the board in any orientation. The mounting
  * matrix seen below tells the MPL how to rotate the raw data from the
  * driver(s).
@@ -157,23 +160,71 @@ volatile uint32_t g_ul_ms_ticks=0;
 u8 msg_IMU;
 
 
+static void tap_cb(unsigned char direction, unsigned char count)
+{
+    switch (direction) {
+    case TAP_X_UP:
+        printf("Tap X+ ");
+        break;
+    case TAP_X_DOWN:
+        printf("Tap X- ");
+        break;
+    case TAP_Y_UP:
+        printf("Tap Y+ ");
+        break;
+    case TAP_Y_DOWN:
+        printf("Tap Y- ");
+        break;
+    case TAP_Z_UP:
+        printf("Tap Z+ ");
+        break;
+    case TAP_Z_DOWN:
+        printf("Tap Z- ");
+        break;
+    default:
+        return;
+    }
+    printf("x%d\n", count);
+    return;
+}
+
+static void android_orient_cb(unsigned char orientation)
+{
+	switch (orientation) {
+	case ANDROID_ORIENT_PORTRAIT:
+        printf("Portrait\n");
+        break;
+	case ANDROID_ORIENT_LANDSCAPE:
+        printf("Landscape\n");
+        break;
+	case ANDROID_ORIENT_REVERSE_PORTRAIT:
+        printf("Reverse Portrait\n");
+        break;
+	case ANDROID_ORIENT_REVERSE_LANDSCAPE:
+        printf("Reverse Landscape\n");
+        break;
+	default:
+		return;
+	}
+}
+
 static inline void run_self_test(void)
 {
     int result;
     long gyro[3], accel[3];
 
 #if defined (MPU6500) || defined (MPU9250)
-    result = mpu_run_6500_self_test(gyro, accel, 0);
+    result = mpu_run_6500_self_test(gyro, accel, 1);
 #elif defined (MPU6050) || defined (MPU9150)
     result = mpu_run_self_test(gyro, accel);
 #endif
     if (result == 0x7) {
 	printf("Passed!\n");
-        printf("accel: %7.4f %7.4f %7.4f\n",
+        printf("accel: %7.4f %7.4f %7.4f\r\n",
                     accel[0]/65536.f,
                     accel[1]/65536.f,
                     accel[2]/65536.f);
-        printf("gyro: %7.4f %7.4f %7.4f\n",
+        printf("gyro: %7.4f %7.4f %7.4f\r\n",
                     gyro[0]/65536.f,
                     gyro[1]/65536.f,
                     gyro[2]/65536.f);
@@ -223,11 +274,11 @@ static inline void run_self_test(void)
     }
     else {
             if (!(result & 0x1))
-                printf("Gyro failed.\n");
+                printf("Gyro failed.\r\n");
             if (!(result & 0x2))
-                printf("Accel failed.\n");
+                printf("Accel failed.\r\n");
             if (!(result & 0x4))
-                printf("Compass failed.\n");
+                printf("Compass failed.\r\n");
      }
 
 }
@@ -248,6 +299,7 @@ int main(void)
 	LED_Init();		  					//初始化LED
 	chk = DS18B20_Init();
 	printf("Welcome to the Sensorboard. DS18B20 = %d\r\n", chk);
+	WHDG_IO = ~WHDG_IO;
 	I2cMaster_Init();
 	Set_I2C_Retry(5);
 	msg_IMU = mpu_init(&int_param);
@@ -255,6 +307,25 @@ int main(void)
 		printf("Note: IMU starts up successfully\r\n");
 	else
 		printf("Error: IMU fails to startup\r\n");
+	DMPSetup();
+	msg_IMU = dmp_load_motion_driver_firmware();
+  msg_IMU= dmp_set_orientation(
+        inv_orientation_matrix_to_scalar(gyro_pdata.orientation));
+  msg_IMU = dmp_register_tap_cb(tap_cb);
+  msg_IMU = dmp_register_android_orient_cb(android_orient_cb);
+  hal.dmp_features = DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_TAP| DMP_FEATURE_ANDROID_ORIENT|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_SEND_CAL_GYRO| DMP_FEATURE_GYRO_CAL;
+  msg_IMU = dmp_enable_feature(hal.dmp_features);
+  msg_IMU = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
+	run_self_test();
+  msg_IMU = mpu_set_dmp_state(1);
+    hal.dmp_on = 1;
+//	for (msg_IMU =0; msg_IMU < 20; msg_IMU++){
+//		gSensor.imuData.ID = 0;
+//		Sensors_I2C_ReadRegister(0x68, 0x75, 1, &gSensor.imuData.ID);
+//		printf("failt to get  gyro data %x\r\n",gSensor.imuData.ID);
+//		delay_ms(1000);
+//		
+//	}
 //	TIM3_Int_Init(10000-1,7200-1);		//初始化定时器3，定时器周期1S
 //	TIM5_Int_Init(10000-1,7200-1);		//初始化定时器5，定时器周期1S
 	
@@ -335,6 +406,7 @@ void temp_task(void *pvParameters)
 	static short tempera =0;
 	while(1)
 	{
+		taskENTER_CRITICAL();  
 		tempera = DS18B20_Get_Temp();
 		printf("Update: current temperature is %.1f\r\n", (float)tempera/10);
 		Readburst(gSensor.Temperaturer.m_Time);
@@ -344,6 +416,10 @@ void temp_task(void *pvParameters)
 																									gSensor.Temperaturer.m_Time[2],
 																									gSensor.Temperaturer.m_Time[1],
 																									gSensor.Temperaturer.m_Time[0]);
+//		tempera = dmp_read_fifo(gSensor.imuData.gyro, gSensor.imuData.accel_short,gSensor.imuData.quat,&gSensor.imuData.sensor_timestamp, &gSensor.imuData.sensors, &gSensor.imuData.more);
+		
+		taskEXIT_CRITICAL(); 
+
 		vTaskDelay(10000);
 	}
 
@@ -372,9 +448,13 @@ void interrupt_task(void *pvParameters)
 void LED_task(void *pvParameters)
 {
 	while(1)
-	{
+	{ 
+		gSensor.imuData.ID = 0;
+		Sensors_I2C_ReadRegister(0x68, 0x75, 1, &gSensor.imuData.ID);
+		printf("error: fail to get the data from IMU, ID = %x\r\n",gSensor.imuData.ID );		
 		LED0 = ~LED0;
 		printf("Warning:LED0 is toggled\r\n");
+
 		vTaskDelay(1000);
 	}
 

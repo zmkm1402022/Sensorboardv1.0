@@ -45,3 +45,4 @@
 ..\obj\i2c.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\i2c.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\i2c.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\i2c.o: ..\HARDWARE\MPU9250\MPU9250.h

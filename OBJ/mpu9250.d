@@ -46,6 +46,7 @@
 ..\obj\mpu9250.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\mpu9250.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\mpu9250.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\mpu9250.o: ..\HARDWARE\MPU9250\MPU9250.h
 ..\obj\mpu9250.o: ..\HARDWARE\MPU9250\inv_mpu.h
 ..\obj\mpu9250.o: ..\HARDWARE\MPU9250\inv_mpu_dmp_motion_driver.h
 ..\obj\mpu9250.o: ..\HARDWARE\MPU9250\mllite\ml_math_func.h

@@ -44,6 +44,7 @@
 ..\obj\delay.o: ..\HARDWARE\IIC\I2C.h
 ..\obj\delay.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\delay.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\delay.o: ..\HARDWARE\MPU9250\MPU9250.h
 ..\obj\delay.o: ..\FreeRTOS\include\FreeRTOS.h
 ..\obj\delay.o: ..\FreeRTOS\include\FreeRTOSConfig.h
 ..\obj\delay.o: ..\FreeRTOS\SystemView\Src\FreeRTOSV9\SEGGER_SYSVIEW_FreeRTOS.h

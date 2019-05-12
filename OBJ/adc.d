@@ -45,3 +45,4 @@
 ..\obj\adc.o: ..\SYSTEM\header.h
 ..\obj\adc.o: ..\HARDWARE\Ultrasonic\ultrasonic.h
 ..\obj\adc.o: ..\HARDWARE\DS1302\DS1302.h
+..\obj\adc.o: ..\HARDWARE\MPU9250\MPU9250.h
