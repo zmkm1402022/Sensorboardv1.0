@@ -2,7 +2,7 @@
 ..\obj\usart.o: ..\SYSTEM\sys\sys.h
 ..\obj\usart.o: ..\USER\stm32f10x.h
 ..\obj\usart.o: ..\CORE\core_cm3.h
-..\obj\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\usart.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdint.h
 ..\obj\usart.o: ..\USER\system_stm32f10x.h
 ..\obj\usart.o: ..\USER\stm32f10x_conf.h
 ..\obj\usart.o: ..\STM32F10x_FWLib\inc\stm32f10x_adc.h
@@ -30,14 +30,14 @@
 ..\obj\usart.o: ..\STM32F10x_FWLib\inc\stm32f10x_wwdg.h
 ..\obj\usart.o: ..\STM32F10x_FWLib\inc\misc.h
 ..\obj\usart.o: ..\SYSTEM\usart\usart.h
-..\obj\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\usart.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdio.h
 ..\obj\usart.o: ..\FreeRTOS\include\FreeRTOS.h
-..\obj\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+..\obj\usart.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stddef.h
 ..\obj\usart.o: ..\FreeRTOS\include\FreeRTOSConfig.h
 ..\obj\usart.o: ..\FreeRTOS\SystemView\Src\FreeRTOSV9\SEGGER_SYSVIEW_FreeRTOS.h
 ..\obj\usart.o: ..\FreeRTOS\SystemView\Src\SEGGER\SEGGER_SYSVIEW.h
 ..\obj\usart.o: ..\FreeRTOS\SystemView\Src\SEGGER\SEGGER.h
-..\obj\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+..\obj\usart.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdarg.h
 ..\obj\usart.o: ..\FreeRTOS\SystemView\Src\Config\Global.h
 ..\obj\usart.o: ..\FreeRTOS\include\projdefs.h
 ..\obj\usart.o: ..\FreeRTOS\include\portable.h

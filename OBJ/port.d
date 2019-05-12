@@ -2,11 +2,11 @@
 ..\obj\port.o: ..\FreeRTOS\SystemView\Src\FreeRTOSV9\SEGGER_SYSVIEW_FreeRTOS.h
 ..\obj\port.o: ..\FreeRTOS\SystemView\Src\SEGGER\SEGGER_SYSVIEW.h
 ..\obj\port.o: ..\FreeRTOS\SystemView\Src\SEGGER\SEGGER.h
-..\obj\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+..\obj\port.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdarg.h
 ..\obj\port.o: ..\FreeRTOS\SystemView\Src\Config\Global.h
 ..\obj\port.o: ..\FreeRTOS\include\FreeRTOS.h
-..\obj\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
-..\obj\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\port.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stddef.h
+..\obj\port.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdint.h
 ..\obj\port.o: ..\FreeRTOS\include\FreeRTOSConfig.h
 ..\obj\port.o: ..\SYSTEM\sys\sys.h
 ..\obj\port.o: ..\USER\stm32f10x.h
@@ -38,7 +38,7 @@
 ..\obj\port.o: ..\STM32F10x_FWLib\inc\stm32f10x_wwdg.h
 ..\obj\port.o: ..\STM32F10x_FWLib\inc\misc.h
 ..\obj\port.o: ..\SYSTEM\usart\usart.h
-..\obj\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\port.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdio.h
 ..\obj\port.o: ..\FreeRTOS\include\projdefs.h
 ..\obj\port.o: ..\FreeRTOS\include\portable.h
 ..\obj\port.o: ..\FreeRTOS\include\deprecated_definitions.h

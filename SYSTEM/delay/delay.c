@@ -1,5 +1,6 @@
 #include "delay.h"
 #include "sys.h"
+#include "header.h"
 ////////////////////////////////////////////////////////////////////////////////// 	 
 //如果需要使用OS,则包括下面的头文件即可.
 #if SYSTEM_SUPPORT_OS
@@ -34,6 +35,7 @@ void SysTick_Handler(void)
     if(xTaskGetSchedulerState()!=taskSCHEDULER_NOT_STARTED)//系统已经运行
     {
         xPortSysTickHandler();	
+				g_ul_ms_ticks++;
     }
 }
 			   
@@ -105,7 +107,11 @@ void delay_xms(u32 nms)
 
 
 
-
+uint32_t get_tick_count(unsigned long *count)
+{
+        count[0] = g_ul_ms_ticks;
+	return 0;
+}
 
 
 

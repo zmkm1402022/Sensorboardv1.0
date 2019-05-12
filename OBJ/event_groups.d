@@ -1,13 +1,13 @@
 ..\obj\event_groups.o: ..\FreeRTOS\event_groups.c
-..\obj\event_groups.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+..\obj\event_groups.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\obj\event_groups.o: ..\FreeRTOS\SystemView\Src\FreeRTOSV9\SEGGER_SYSVIEW_FreeRTOS.h
 ..\obj\event_groups.o: ..\FreeRTOS\SystemView\Src\SEGGER\SEGGER_SYSVIEW.h
 ..\obj\event_groups.o: ..\FreeRTOS\SystemView\Src\SEGGER\SEGGER.h
-..\obj\event_groups.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+..\obj\event_groups.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdarg.h
 ..\obj\event_groups.o: ..\FreeRTOS\SystemView\Src\Config\Global.h
 ..\obj\event_groups.o: ..\FreeRTOS\include\FreeRTOS.h
-..\obj\event_groups.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
-..\obj\event_groups.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\event_groups.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stddef.h
+..\obj\event_groups.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdint.h
 ..\obj\event_groups.o: ..\FreeRTOS\include\FreeRTOSConfig.h
 ..\obj\event_groups.o: ..\SYSTEM\sys\sys.h
 ..\obj\event_groups.o: ..\USER\stm32f10x.h
@@ -39,7 +39,7 @@
 ..\obj\event_groups.o: ..\STM32F10x_FWLib\inc\stm32f10x_wwdg.h
 ..\obj\event_groups.o: ..\STM32F10x_FWLib\inc\misc.h
 ..\obj\event_groups.o: ..\SYSTEM\usart\usart.h
-..\obj\event_groups.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\event_groups.o: D:\ProgramsX86\Installation_Program\8_th\ARM\ARMCC\Bin\..\include\stdio.h
 ..\obj\event_groups.o: ..\FreeRTOS\include\projdefs.h
 ..\obj\event_groups.o: ..\FreeRTOS\include\portable.h
 ..\obj\event_groups.o: ..\FreeRTOS\include\deprecated_definitions.h

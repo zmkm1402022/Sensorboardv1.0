@@ -5,19 +5,24 @@
 #include "stm32f10x_dma.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
+#include "stm32f10x_i2c.h"
 #include "stm32f10x.h"
 #include "usart.h"
 #include "can.h"
 #include "delay.h"
 #include "ds18b20.h"
 #include "adc.h"
-#include "myiic.h"
+#include "I2C.h"
 #include "stm32f10x_tim.h"
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
 #include "ultrasonic.h"
 #include "DS1302.h"
+
+
+
+
 #define		NumberOfSamplingChannel		3
 /*
 define the controlling ports for ultrasonic and infrared sensors
@@ -103,6 +108,12 @@ typedef struct
 	DWORD m_Broadcast_Interval;
 }GlobTimer_TypeDef;
 
+typedef struct
+{
+	u8 imu_Reg_context[4];
+
+}GlobMPU9250;
+
 
 typedef struct
 {
@@ -132,9 +143,10 @@ typedef struct
 	GlobTimer_TypeDef Sensor_timer;
 	volatile u16 RawData[NumberOfSamplingChannel];
 	CANID_TypeDef CanID;
+	GlobMPU9250 imuData;
 }GlobalSensor;
 
 
 extern GlobalSensor gSensor;
-
+extern volatile uint32_t g_ul_ms_ticks;
 #endif
