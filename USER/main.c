@@ -379,7 +379,7 @@ void start_task(void *pvParameters)
                 (TaskHandle_t*  )&IMUTask_Handler); 	//ÈÎÎñ¾ä±ú
 								
 		AutoReloadTimer_Handle = xTimerCreate(  (const char *) "AutoReloadTimer",
-											  (TickType_t) 500,
+											  (TickType_t) 900,
 											  (UBaseType_t) pdTRUE,
 											  (void *) 1,
 											  (TimerCallbackFunction_t) AutoTimerCallback );
@@ -420,9 +420,11 @@ void start_task(void *pvParameters)
 void imu_task(void *pvParameters)
 {
 	static int errcode =0;
+	TickType_t xLastWakeTime;
+	EventBits_t eventResult;
 	while(1)
 	{
-		TickType_t xLastWakeTime;
+		
 		xLastWakeTime = xTaskGetTickCount();
 		taskENTER_CRITICAL(); 
 		errcode = dmp_read_fifo(gSensor.imuData.gyro, gSensor.imuData.accel_short,gSensor.imuData.quat,&gSensor.imuData.sensor_timestamp, &gSensor.imuData.sensors, &gSensor.imuData.more);
@@ -433,6 +435,7 @@ void imu_task(void *pvParameters)
 			printf("ACCEL: %.3f\t\t%.3f\t\t%.3f\t\t\r\n", (float)gSensor.imuData.accel_short[0],(float)gSensor.imuData.accel_short[1],(float)gSensor.imuData.accel_short[2]);
 			printf("Timestamp: 0x%lx\t\t\r\n",gSensor.imuData.sensor_timestamp);
 		}
+		eventResult = xEventGroupSetBits( (EventGroupHandle_t) EventGroupHandle, (EventBits_t)  MPU_EVENTBIT);
 		taskEXIT_CRITICAL(); 
 		vTaskDelayUntil( &xLastWakeTime, 100 );		
 	}
@@ -487,9 +490,6 @@ void LED_task(void *pvParameters)
 	while(1)
 	{ 
 		LED0 = ~LED0;
-//		ADC_SoftwareStartConvCmd(ADC1, ENABLE);
-		Result = xEventGroupSetBits( EventGroupHandle, INFRA_EVENTBIT );
-//		Result = xEventGroupSetBitsFromISR(EventGroupHandler,INFRA_EVENTBIT,&xHigherPriorityTaskWoken);
 		printf("Warning:LED0 is toggled, result = %x\r\n", Result);
 		vTaskDelay(2000);
 	}
@@ -502,26 +502,24 @@ void LED_task(void *pvParameters)
 void AutoTimerCallback(TimerHandle_t xTimer)
 {
 	static u16 timnum =0;
-
+	configASSERT( xTimer );
 	timnum++;
 	printf("Warning: Autoreload timer has worked for %d times\r\n", timnum);
-	
 	WHDG_IO = ~WHDG_IO;
-
-//	TRG_1 =1;
-//	TRG_2 =1;
-//	TRG_3 =1;
-//	TRG_4 =1;
-//	TRG_5 =1;
-//	TRG_6 =1;
-	
-//	delay_xms(5);
-//	TRG_1 =0;
-//	TRG_2 =0;
-//	TRG_3 =0;
-//	TRG_4 =0;
-//	TRG_5 =0;
-//	TRG_6 =0;
+	TRG_1 =1;
+	TRG_2 =1;
+	TRG_3 =1;
+	TRG_4 =1;
+	TRG_5 =1;
+	TRG_6 =1;
+	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+	delay_xms(5);
+	TRG_1 =0;
+	TRG_2 =0;
+	TRG_3 =0;
+	TRG_4 =0;
+	TRG_5 =0;
+	TRG_6 =0;
 }
 
 void event_task(void *pvParameters)
@@ -532,11 +530,12 @@ void event_task(void *pvParameters)
 		if(EventGroupHandle != NULL)
 		{
 			EventValue = 	xEventGroupWaitBits( 	(EventGroupHandle_t) EventGroupHandle,
-																					(EventBits_t)	 INFRA_EVENTBIT,
+																					(EventBits_t)	 EVENTBIT_ALL,
 																					(BaseType_t) pdTRUE,
 																					(BaseType_t) pdFALSE,
 																					(TickType_t) portMAX_DELAY );
 			printf("List: event value is %d\r\n", EventValue);
+			
 			Uavcan_Broadcast();
 		}	
 		else
@@ -555,9 +554,9 @@ void query_task(void *pvParameters)
 	StatusArray = pvPortMalloc(ArraySize * sizeof(TaskStatus_t));
 	if(StatusArray != NULL)
 	{
-//		ArraySize = uxTaskGetSystemState( (TaskStatus_t *) StatusArray, 
-//											(UBaseType_t) ArraySize, 
-//											(uint32_t *) &TotalRunTime );
+		ArraySize = uxTaskGetSystemState( (TaskStatus_t *) StatusArray, 
+											(UBaseType_t) ArraySize, 
+											(uint32_t *) &TotalRunTime );
 		printf("TaskName\t\tPriority\t\tTaskNumber\t\t\r\n");
 		for (x=0; x<ArraySize;x++)
 			{
