@@ -7,6 +7,7 @@
 #include "task.h"
 #include "timers.h"
 #include "event_groups.h"
+#include "semphr.h"
 #include "SEGGER_SYSVIEW.h"
 #include "inv_mpu.h"
 #include "data_builder.h"
@@ -53,13 +54,13 @@ static struct platform_data_s gyro_pdata = {
 };
 
 #if defined MPU9150 || defined MPU9250
-static struct platform_data_s compass_pdata = {
-    .orientation = { 0, 1, 0,
-                     1, 0, 0,
-                     0, 0, -1}
-};
+//static struct platform_data_s compass_pdata = {
+//    .orientation = { 0, 1, 0,
+//                     1, 0, 0,
+//                     0, 0, -1}
+//};
 
-#define COMPASS_ENABLED 0
+//#define COMPASS_ENABLED 0
 
 #elif defined AK8975_SECONDARY
 static struct platform_data_s compass_pdata = {
@@ -82,7 +83,14 @@ static struct platform_data_s compass_pdata = {
 TaskHandle_t QueryTask_Handler;
 void query_task(void *pvParameters);
 
-
+//任务优先级
+#define UAVCAN_TASK_PRIO			8
+//任务堆栈大小	
+#define UAVCAN_STK_SIZE 			100  
+//任务句柄
+TaskHandle_t UavcanTask_Handler;
+//任务函数
+void uavcan_task(void *pvParameters);
 
 //任务优先级
 #define START_TASK_PRIO			1
@@ -151,6 +159,7 @@ TimerHandle_t AutoReloadTimer_Handle;
 void AutoTimerCallback(TimerHandle_t xTimer);
 
 EventGroupHandle_t EventGroupHandle;
+SemaphoreHandle_t BinarySemaphore;
 
 void Board_Init(void);
 
@@ -159,7 +168,7 @@ struct int_param_s int_param;
 u8 chk;
 
 volatile uint32_t g_ul_ms_ticks=0;
-u8 msg_IMU;
+
 
 
 static void tap_cb(unsigned char direction, unsigned char count)
@@ -300,7 +309,7 @@ int main(void)
 	delay_ms(500);
 	gSensor.CanID.m_ID = ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_1);
 	CAN_NodeID_Update();
-	CAN_Configuration();
+	
 	LED_Init();		  					//初始化LED
 	chk = DS18B20_Init();
 	printf("Welcome to the Sensorboard. DS18B20 = %d\r\n", chk);
@@ -308,36 +317,37 @@ int main(void)
 	I2cMaster_Init();
 	WHDG_IO = ~WHDG_IO;
 	Set_I2C_Retry(5);
-	msg_IMU = mpu_init(&int_param);
+	gSensor.imuData.startup_flag = mpu_init(&int_param);
 	WHDG_IO = ~WHDG_IO;
-	if(msg_IMU == 0)
+	if(gSensor.imuData.startup_flag == 0)
 		printf("Note: IMU starts up successfully\r\n");
 	else
 		printf("Error: IMU fails to startup\r\n");
 	DMPSetup();
-	msg_IMU = dmp_load_motion_driver_firmware();
-  msg_IMU= dmp_set_orientation(
+	gSensor.imuData.startup_flag = dmp_load_motion_driver_firmware();
+  gSensor.imuData.startup_flag= dmp_set_orientation(
         inv_orientation_matrix_to_scalar(gyro_pdata.orientation));
-  msg_IMU = dmp_register_tap_cb(tap_cb);
-  msg_IMU = dmp_register_android_orient_cb(android_orient_cb);
+  gSensor.imuData.startup_flag = dmp_register_tap_cb(tap_cb);
+  gSensor.imuData.startup_flag = dmp_register_android_orient_cb(android_orient_cb);
   hal.dmp_features = DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_TAP| DMP_FEATURE_ANDROID_ORIENT|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_SEND_CAL_GYRO| DMP_FEATURE_GYRO_CAL;
-  msg_IMU = dmp_enable_feature(hal.dmp_features);
-  msg_IMU = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
+  gSensor.imuData.startup_flag = dmp_enable_feature(hal.dmp_features);
+  gSensor.imuData.startup_flag = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
 	WHDG_IO = ~WHDG_IO;
 	run_self_test();
 	WHDG_IO = ~WHDG_IO;
-  msg_IMU = mpu_set_dmp_state(1);
+  gSensor.imuData.startup_flag = mpu_set_dmp_state(1);
   hal.dmp_on = 1;
+	CAN_Configuration();
 
 	
 	//创建开始任务
-    xTaskCreate((TaskFunction_t )start_task,            //任务函数
-                (const char*    )"start_task",          //任务名称
-                (uint16_t       )EVENT_STK_SIZE,        //任务堆栈大小
-                (void*          )NULL,                  //传递给任务函数的参数
-                (UBaseType_t    )INTERRUPT_TASK_PRIO,       //任务优先级
-                (TaskHandle_t*  )&StartTask_Handler);   //任务句柄              
-    vTaskStartScheduler();          //开启任务调度
+	xTaskCreate((TaskFunction_t )start_task,            //任务函数
+							(const char*    )"start_task",          //任务名称
+							(uint16_t       )EVENT_STK_SIZE,        //任务堆栈大小
+							(void*          )NULL,                  //传递给任务函数的参数
+							(UBaseType_t    )INTERRUPT_TASK_PRIO,       //任务优先级
+							(TaskHandle_t*  )&StartTask_Handler);   //任务句柄              
+	vTaskStartScheduler();          //开启任务调度
 }
 
 //开始任务任务函数
@@ -356,6 +366,14 @@ void start_task(void *pvParameters)
 		// The event group was created.
 		printf("note:  create the event group successfully\r\n");
 	}
+	
+	 BinarySemaphore = xSemaphoreCreateBinary();
+   xTaskCreate((TaskFunction_t )uavcan_task,  			//任务函数
+                (const char*    )"uavcan_task", 			//任务名称
+                (uint16_t       )UAVCAN_STK_SIZE,		//任务堆栈大小
+                (void*          )NULL,						//传递给任务函数的参数
+                (UBaseType_t    )UAVCAN_TASK_PRIO,		//任务优先级
+                (TaskHandle_t*  )&UavcanTask_Handler); 	//任务句柄
     //创建事件组处理任务
     xTaskCreate((TaskFunction_t )event_task,  			//任务函数
                 (const char*    )"event_task", 			//任务名称
@@ -417,29 +435,59 @@ void start_task(void *pvParameters)
   taskEXIT_CRITICAL();            //退出临界区
 }
 
+void uavcan_task(void *pvParameters)
+{
+	BaseType_t err=pdFALSE;
+	
+	while(1)
+	{
+		err = xSemaphoreTake(BinarySemaphore,portMAX_DELAY);
+		vTaskSuspend( LEDTask_Handler );
+		vTaskSuspend( IMUTask_Handler );
+//		xTimerChangePeriod( 	(TimerHandle_t) AutoReloadTimer_Handle,
+//		 	  									(TickType_t) 20000,
+//		  										(TickType_t) 10 );
+//		xTimerReset( (TimerHandle_t) AutoReloadTimer_Handle, 10 );
+		if (err == pdTRUE)
+			UavcanFun();
+		LED0 = 1;
+	
+	}
+
+}
+
+
 void imu_task(void *pvParameters)
 {
 	static int errcode =0;
 	TickType_t xLastWakeTime;
-	EventBits_t eventResult;
+//	EventBits_t eventResult;
 	while(1)
 	{
-		
 		xLastWakeTime = xTaskGetTickCount();
 		taskENTER_CRITICAL(); 
 		errcode = dmp_read_fifo(gSensor.imuData.gyro, gSensor.imuData.accel_short,gSensor.imuData.quat,&gSensor.imuData.sensor_timestamp, &gSensor.imuData.sensors, &gSensor.imuData.more);
 		if ( errcode != 0)
-			printf("error: fail to read the data from FIFO, ErrorCode = %d\r\n",errcode);
-		else{
-			printf("GYRO: %.3f\t\t%.3f\t\t%.3f\t\t\r\n",(float)gSensor.imuData.gyro[0],(float)gSensor.imuData.gyro[1],(float)gSensor.imuData.gyro[2]);
-			printf("ACCEL: %.3f\t\t%.3f\t\t%.3f\t\t\r\n", (float)gSensor.imuData.accel_short[0],(float)gSensor.imuData.accel_short[1],(float)gSensor.imuData.accel_short[2]);
-			printf("Timestamp: 0x%lx\t\t\r\n",gSensor.imuData.sensor_timestamp);
+		{
+			printf("error: fail to read the data from FIFO, error_cnt = %d\r\n",gSensor.imuData.error_cnt);
+			gSensor.imuData.error_cnt++;
+			if (gSensor.imuData.error_cnt >1000 )
+			{
+				gSensor.imuData.startup_flag = 1;
+				vTaskSuspend( IMUTask_Handler );
+			}
 		}
-		eventResult = xEventGroupSetBits( (EventGroupHandle_t) EventGroupHandle, (EventBits_t)  MPU_EVENTBIT);
+		else if (gSensor.imuData.error_cnt >0)
+		{
+			gSensor.imuData.error_cnt--;
+//			printf("GYRO: %.3f\t\t%.3f\t\t%.3f\t\t\r\n",(float)gSensor.imuData.gyro[0],(float)gSensor.imuData.gyro[1],(float)gSensor.imuData.gyro[2]);
+//			printf("ACCEL: %.3f\t\t%.3f\t\t%.3f\t\t\r\n", (float)gSensor.imuData.accel_short[0],(float)gSensor.imuData.accel_short[1],(float)gSensor.imuData.accel_short[2]);
+//			printf("Timestamp: 0x%lx\t\t\r\n",gSensor.imuData.sensor_timestamp);
+		}
+		xEventGroupSetBits( (EventGroupHandle_t) EventGroupHandle, (EventBits_t)  MPU_EVENTBIT);
 		taskEXIT_CRITICAL(); 
-		vTaskDelayUntil( &xLastWakeTime, 100 );		
+		vTaskDelayUntil( &xLastWakeTime, 10 );		
 	}
-
 }
 
 void temp_task(void *pvParameters)
@@ -471,29 +519,49 @@ void interrupt_task(void *pvParameters)
     while(1)
     {
 		total_num+=1;
-		if(total_num==5) 
-		{
-			printf("关闭中断.............\r\n");
-			total_num = 0;
-//			portDISABLE_INTERRUPTS();				//关闭中断
-			delay_xms(50000);						//延时5s
-			printf("打开中断.............\r\n");	//打开中断
-//			portENABLE_INTERRUPTS();
-		}
-        vTaskDelay(1000);
+//		if(total_num==5) 
+//		{
+//			printf("关闭中断.............\r\n");
+//			total_num = 0;
+////			portDISABLE_INTERRUPTS();				//关闭中断
+//			delay_xms(50000);						//延时5s
+//			printf("打开中断.............\r\n");	//打开中断
+////			portENABLE_INTERRUPTS();
+//		}
+        vTaskDelay(10000);
     }
 } 
 
 void LED_task(void *pvParameters)
 {
-	EventBits_t Result;
 	while(1)
 	{ 
 		LED0 = ~LED0;
-		printf("Warning:LED0 is toggled, result = %x\r\n", Result);
-		vTaskDelay(2000);
+//		printf("Warning:LED0 is toggled\r\n");
+		if (gSensor.imuData.startup_flag != 0)
+		{
+			gSensor.imuData.imu_pwr_rst_cnt ++;
+			gSensor.imuData.startup_flag = mpu_init(&int_param);
+			if(gSensor.imuData.startup_flag == 0)
+			{
+				DMPSetup();
+				dmp_load_motion_driver_firmware();
+				dmp_set_orientation(
+							inv_orientation_matrix_to_scalar(gyro_pdata.orientation));
+				dmp_register_tap_cb(tap_cb);
+				dmp_register_android_orient_cb(android_orient_cb);
+				hal.dmp_features = DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_TAP| DMP_FEATURE_ANDROID_ORIENT|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_SEND_CAL_GYRO| DMP_FEATURE_GYRO_CAL;
+				dmp_enable_feature(hal.dmp_features);
+				gSensor.imuData.startup_flag = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
+				if(gSensor.imuData.startup_flag == 0)
+					run_self_test();
+				gSensor.imuData.startup_flag = mpu_set_dmp_state(1);	
+				if(gSensor.imuData.startup_flag == 0)
+					vTaskResume(IMUTask_Handler);
+			}
+		}
+		vTaskDelay(800);
 	}
-
 }
 
 
@@ -504,7 +572,7 @@ void AutoTimerCallback(TimerHandle_t xTimer)
 	static u16 timnum =0;
 	configASSERT( xTimer );
 	timnum++;
-	printf("Warning: Autoreload timer has worked for %d times\r\n", timnum);
+//	printf("Warning: Autoreload timer has worked for %d times\r\n", timnum);
 	WHDG_IO = ~WHDG_IO;
 	TRG_1 =1;
 	TRG_2 =1;
@@ -520,29 +588,38 @@ void AutoTimerCallback(TimerHandle_t xTimer)
 	TRG_4 =0;
 	TRG_5 =0;
 	TRG_6 =0;
+	if (eTaskGetState( LEDTask_Handler ) == eSuspended){
+		LED0 = 0;
+		vTaskResume(LEDTask_Handler);
+	}
+	if (eTaskGetState( IMUTask_Handler ) == eSuspended){
+//		xTimerChangePeriod( 	(TimerHandle_t) AutoReloadTimer_Handle,
+//		 	  									(TickType_t) 100,
+//		  										(TickType_t) 10 );		
+		vTaskResume(IMUTask_Handler);	
+	}
 }
 
 void event_task(void *pvParameters)
 {
 	EventBits_t EventValue;
+//	static uint32_t event_num=0;
 	while(1)
 	{
 		if(EventGroupHandle != NULL)
 		{
 			EventValue = 	xEventGroupWaitBits( 	(EventGroupHandle_t) EventGroupHandle,
-																					(EventBits_t)	 EVENTBIT_ALL,
+																					(EventBits_t)	 MPU_EVENTBIT,
 																					(BaseType_t) pdTRUE,
 																					(BaseType_t) pdFALSE,
 																					(TickType_t) portMAX_DELAY );
-			printf("List: event value is %d\r\n", EventValue);
-			
+//			printf("List: event value is %d\r\n", EventValue);
+//			event_num++;
 			Uavcan_Broadcast();
 		}	
 		else
 			vTaskDelay(10);
 	}
-	
-	
 }
 
 void query_task(void *pvParameters)
@@ -567,8 +644,8 @@ void query_task(void *pvParameters)
 	}
 	vPortFree(StatusArray);
 	printf("/**************************end***************************/\r\n");
-	while(1)
-		vTaskDelay(1000);
+	vTaskDelete(QueryTask_Handler);
+	vTaskDelay(10);
 }
 
 

@@ -35,14 +35,14 @@ void Sonar06_init(void)
 	
 		GPIO_InitStructure.GPIO_Pin = ECHO6;							   //GPIO??
 	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	  GPIO_Init(GPIOC, &GPIO_InitStructure);
+	  GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
 	
 		TIM_TimeBaseStructure.TIM_Period = 0xFFFF;	  //
 		TIM_TimeBaseStructure.TIM_Prescaler =SystemCoreClock/500000-1; // ?б└??????=10K
 		TIM_TimeBaseStructure.TIM_ClockDivision = 0; 
 		TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  
-		TIM_TimeBaseInit(TIM8, &TIM_TimeBaseStructure); 
+		TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure); 
 	
 		TIM_ICInitStructure.TIM_Channel = TIM_Channel_1; 
 		TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising; 
@@ -70,7 +70,6 @@ void Sonar06_init(void)
 		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 		NVIC_Init(&NVIC_InitStructure);
 		TIM_ITConfig(TIM1, TIM_IT_CC2, ENABLE); 
-
 
 }
 
@@ -128,7 +127,9 @@ void Sonar05_init(void)
 
 }
 
-
+/*
+	IRQ priority should be set high as possible.
+*/
 void Sonar04_init(void) 
 { 
 	TIM_ICInitTypeDef TIM_ICInitStructure; 
@@ -159,12 +160,12 @@ void Sonar04_init(void)
 	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI; 
 	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1; 
 	TIM_ICInitStructure.TIM_ICFilter = 0x0;
-
+	
 	TIM_ICInit(TIM2, &TIM_ICInitStructure);  
-
+	TIM_PWMIConfig(TIM5, &TIM_ICInitStructure);
 	/* Enable the CC2 Interrupt Request */ 
 	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;                     
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 8;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
@@ -335,15 +336,15 @@ void Sonar01_init(void)
 
 void TIM1_CC_IRQHandler(void)
 {
-	BaseType_t Result, xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t Result, xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;
 	if(TIM_GetFlagStatus(TIM1, TIM_FLAG_CC2) == SET)
 	{
-		gSensor.Sonar06.m_PulseWidth = TIM_GetCapture2(TIM1);
-		gSensor.Sonar06.m_Distance = gSensor.Sonar06.m_PulseWidth*344/1000;
-		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO6_EVENTBIT,&xHigherPriorityTaskWoken);
-		if(Result != pdFAIL)
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		gSensor.Sonar05.m_PulseWidth = TIM_GetCapture2(TIM1);
+		gSensor.Sonar05.m_Distance = gSensor.Sonar05.m_PulseWidth*344/1000;
+//		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO6_EVENTBIT,&xHigherPriorityTaskWoken);
+//		if(Result != pdFAIL)
+//			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		TIM_ClearITPendingBit(TIM1, TIM_FLAG_CC2);
 		TIM_ClearFlag(TIM1, TIM_FLAG_CC2);
 	}
@@ -351,15 +352,15 @@ void TIM1_CC_IRQHandler(void)
 
 void TIM8_CC_IRQHandler(void)
 {
-	BaseType_t Result, xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t Result, xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;
 	if(TIM_GetFlagStatus(TIM8, TIM_FLAG_CC2) == SET)
 	{
-		gSensor.Sonar05.m_PulseWidth = TIM_GetCapture2(TIM8);
-		gSensor.Sonar05.m_Distance = gSensor.Sonar05.m_PulseWidth*344/1000;
-		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO5_EVENTBIT,&xHigherPriorityTaskWoken);
-		if(Result != pdFAIL)
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		gSensor.Sonar04.m_PulseWidth = TIM_GetCapture2(TIM8);
+		gSensor.Sonar04.m_Distance = gSensor.Sonar04.m_PulseWidth*344/1000;
+//		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO5_EVENTBIT,&xHigherPriorityTaskWoken);
+//		if(Result != pdFAIL)
+//			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		TIM_ClearITPendingBit(TIM8, TIM_FLAG_CC2);
 		TIM_ClearFlag(TIM8, TIM_FLAG_CC2);
 	}
@@ -368,76 +369,76 @@ void TIM8_CC_IRQHandler(void)
 
 void TIM4_IRQHandler(void) 
 {
-	BaseType_t Result, xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;	
+//	BaseType_t Result, xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;	
 	if(TIM_GetFlagStatus(TIM4,TIM_FLAG_CC2) == SET) 
 		{ 
-		gSensor.Sonar01.m_PulseWidth = TIM_GetCapture2(TIM4); 
-		gSensor.Sonar01.m_Distance = gSensor.Sonar01.m_PulseWidth*344/1000;   // unit: mm
-		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO1_EVENTBIT,&xHigherPriorityTaskWoken);
-		if(Result != pdFAIL)
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		gSensor.Sonar06.m_PulseWidth = TIM_GetCapture2(TIM4); 
+		gSensor.Sonar06.m_Distance = gSensor.Sonar06.m_PulseWidth*344/1000;   // unit: mm
+//		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO1_EVENTBIT,&xHigherPriorityTaskWoken);
+//		if(Result != pdFAIL)
+//			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		TIM_ClearFlag(TIM4,TIM_FLAG_CC2);
 		}
 }
 
 void TIM5_IRQHandler(void) 
 { 
-	BaseType_t Result, xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t Result, xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;
 	if(TIM_GetFlagStatus(TIM5,TIM_FLAG_CC2) == SET) 
 		{ 
-		gSensor.Sonar03.m_PulseWidth = TIM_GetCapture2(TIM5); 
-		gSensor.Sonar03.m_Distance = gSensor.Sonar03.m_PulseWidth*344/1000;   // unit: mm
-		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO3_EVENTBIT,&xHigherPriorityTaskWoken);
-		if(Result != pdFAIL)
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		gSensor.Sonar02.m_PulseWidth = TIM_GetCapture2(TIM5); 
+		gSensor.Sonar02.m_Distance = gSensor.Sonar02.m_PulseWidth*344/1000;   // unit: mm
+//		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO3_EVENTBIT,&xHigherPriorityTaskWoken);
+//		if(Result != pdFAIL)
+//			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 			TIM_ClearFlag(TIM5,TIM_FLAG_CC2);
 		}
 }
 
 void TIM3_IRQHandler(void) 
 { 
-	BaseType_t Result, xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t Result, xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;
 	if(TIM_GetFlagStatus(TIM3,TIM_FLAG_CC2) == SET) 
 		{ 
-		gSensor.Sonar02.m_PulseWidth = TIM_GetCapture2(TIM3); 
-		gSensor.Sonar02.m_Distance = gSensor.Sonar02.m_PulseWidth*344/1000;   // unit: mm
-		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO2_EVENTBIT,&xHigherPriorityTaskWoken);
-		if(Result != pdFAIL)
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		gSensor.Sonar03.m_PulseWidth = TIM_GetCapture2(TIM3); 
+		gSensor.Sonar03.m_Distance = gSensor.Sonar03.m_PulseWidth*344/1000;   // unit: mm
+//		Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO2_EVENTBIT,&xHigherPriorityTaskWoken);
+//		if(Result != pdFAIL)
+//			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 			TIM_ClearFlag(TIM3,TIM_FLAG_CC2);
 		}
 }
 
 void TIM2_IRQHandler(void) 
 { 
-	BaseType_t Result, xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t Result, xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;
+	uint16_t capturetime;
 	if(TIM_GetFlagStatus(TIM2,TIM_FLAG_CC3) == SET) 
 		{ 
-			TIM_ClearFlag(TIM2,TIM_FLAG_CC3);
-
-			if (gSensor.Sonar04.m_Flag == RESET){
-				gSensor.Sonar04.m_PulseWidth_Prev = TIM_GetCapture3(TIM2); 
+			capturetime = TIM_GetCapture3(TIM2);
+			if (gSensor.Sonar01.m_Flag == RESET){
+				gSensor.Sonar01.m_PulseWidth_Prev = capturetime; 
 				TIM2->CCER|=1<<9;   //?ии??????????????
-				gSensor.Sonar04.m_Flag = SET;
+				gSensor.Sonar01.m_Flag = SET;
 			}
 			else
 			{
-				if (TIM_GetCapture3(TIM2) >gSensor.Sonar04.m_PulseWidth_Prev)
-				gSensor.Sonar04.m_PulseWidth = TIM_GetCapture3(TIM2)-gSensor.Sonar04.m_PulseWidth_Prev;
+				if (capturetime >gSensor.Sonar01.m_PulseWidth_Prev)
+				gSensor.Sonar01.m_PulseWidth = capturetime-gSensor.Sonar01.m_PulseWidth_Prev;
 				else
-					gSensor.Sonar04.m_PulseWidth = 0xFFFF+TIM_GetCapture3(TIM2)-gSensor.Sonar04.m_PulseWidth_Prev;
-				gSensor.Sonar04.m_Distance = gSensor.Sonar04.m_PulseWidth*344/1000;    // unit: mm
+					gSensor.Sonar01.m_PulseWidth = 0xFFFF+capturetime-gSensor.Sonar01.m_PulseWidth_Prev;
+				gSensor.Sonar01.m_Distance = gSensor.Sonar01.m_PulseWidth*344/1000;    // unit: mm
 				
-				gSensor.Sonar04.m_Flag = RESET;
-				gSensor.Sonar04.m_PulseWidth_Prev = 0;
-				Result = xEventGroupSetBitsFromISR(EventGroupHandle,ECHO4_EVENTBIT,&xHigherPriorityTaskWoken);
-				if(Result != pdFAIL)
-					portYIELD_FROM_ISR(xHigherPriorityTaskWoken);				
-				TIM2->CCER &= ~(1<<9); 
+				gSensor.Sonar01.m_Flag = RESET;
+				gSensor.Sonar01.m_PulseWidth_Prev = 0;		
+				TIM2->CCER &= ~(1<<9);
+				TIM_SetCounter(TIM2, 0);				
 			}
+			
+			TIM_ClearFlag(TIM2,TIM_FLAG_CC3);
 		}
 }

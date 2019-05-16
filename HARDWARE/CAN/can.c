@@ -5,10 +5,16 @@
 #include "canard.h"
 #include "stm32f10x.h"
 #include "ds18b20.h"
-
+#include "FreeRTOS.h"				
+#include "task.h"
+#include "semphr.h"	  
 /*
 
 */
+CanTxMsg cantxframe;
+
+extern SemaphoreHandle_t BinarySemaphore;
+
 const TDeviceInfo ThisVersion = {
 									"SensorBoard_v1.0",
 									1,  // FW VERSION
@@ -58,16 +64,16 @@ uint8_t FLASH_EraseAllNextZONE(uint32_t Page_Address,u16 size);
 #define UAVCAN_SERVICE_ID_STOP                                  0xCD  //STOP 
 
 //服务调用----Powercore私有服务
-#define UAVCAN_SERVICE_ID_SWITCH_12V1                           0xD8
-#define UAVCAN_SERVICE_ID_SWITCH_12V2                          	0xD9
-#define UAVCAN_SERVICE_ID_SWITCH_12V3                           0xDA
-#define UAVCAN_SERVICE_ID_SWITCH_MOTORPOWER                     0xDB
-#define UAVCAN_SERVICE_ID_SWITCH_24VOUT                         0xDC
-#define UAVCAN_SERVICE_ID_SWITCH_POWER													0xE1
+#define UAVCAN_SERVICE_ID_SetDate                           0xD8
+//#define UAVCAN_SERVICE_ID_SWITCH_12V2                          	0xD9
+//#define UAVCAN_SERVICE_ID_SWITCH_12V3                           0xDA
+//#define UAVCAN_SERVICE_ID_SWITCH_MOTORPOWER                     0xDB
+//#define UAVCAN_SERVICE_ID_SWITCH_24VOUT                         0xDC
+//#define UAVCAN_SERVICE_ID_SWITCH_POWER													0xE1
 //#define UAVCAN_SERVICE_ID_OPSTATUS															0xDD
-#define UAVCAN_SERVICE_ID_CHARGESTATUS													0xDE
-#define UAVCAN_SERVICE_ID_CURRENT																0xDF
-#define UAVCAN_SERVICE_ID_ERRSTATUS															0xDD
+//#define UAVCAN_SERVICE_ID_CHARGESTATUS													0xDE
+//#define UAVCAN_SERVICE_ID_CURRENT																0xDF
+//#define UAVCAN_SERVICE_ID_ERRSTATUS															0xDD
 
 //服务调用----备用服务246-256
 #define UAVCAN_SERVICE_FIRMWAWR_UPDATE							0xFE  //固件更新
@@ -80,12 +86,12 @@ uint8_t FLASH_EraseAllNextZONE(uint32_t Page_Address,u16 size);
 #define UAVCAN_SERVICE_RESET_SIGNATURE                       0x7E087F0F029578EC
 #define UAVCAN_SERVICE_START_SIGNATURE                       0xEC7F28DAC87C4379
 #define UAVCAN_SERVICE_STOP_SIGNATURE                        0x644C8832B567A1DC
-#define UAVCAN_SERVICE_ID_SWITCH_12V1_SIGNATURE                   0x00
-#define UAVCAN_SERVICE_ID_SWITCH_12V2_SIGNATURE                  0x00
-#define UAVCAN_SERVICE_ID_SWITCH_12V3_SIGNATURE                  0x00
-#define UAVCAN_SERVICE_ID_SWITCH_MOTORPOWER_SIGNATURE					0x00
-#define UAVCAN_SERVICE_ID_SWITCH_24VOUT_SIGNATURE							0x00
-#define UAVCAN_SERVICE_ID_SWITCH_POWER_SIGNATURE								0x00
+#define UAVCAN_SERVICE_ID_SetDate_SIGNATURE                   0x644C8832B567A1DC
+//#define UAVCAN_SERVICE_ID_SWITCH_12V2_SIGNATURE                  0x00
+//#define UAVCAN_SERVICE_ID_SWITCH_12V3_SIGNATURE                  0x00
+//#define UAVCAN_SERVICE_ID_SWITCH_MOTORPOWER_SIGNATURE					0x00
+//#define UAVCAN_SERVICE_ID_SWITCH_24VOUT_SIGNATURE							0x00
+//#define UAVCAN_SERVICE_ID_SWITCH_POWER_SIGNATURE								0x00
 #define UAVCAN_SERVICE_ID_CURRENT_SIGNATURE									 0x00
 #define UAVCAN_SERVICE_SET_PARAM_SIGNATURE                   0x00
 #define UAVCAN_SERVICE_FIRMWAWR_SIGNATURE                    0x812EBFD0290C78A1
@@ -122,7 +128,7 @@ uint8_t FLASH_EraseAllNextZONE(uint32_t Page_Address,u16 size);
 #define UNIQUE_ID_LENGTH_BYTES                                      16
 
 //广播类型调用----传感器板5080-50BF
-#define UAVCAN_TOPIC_ID_AUTO_TDATA											0x5041 //广播命令
+#define UAVCAN_TOPIC_ID_AUTO_TDATA											0x5040 //广播命令
 //#define UAVCAN_TOPIC_ID_LED_SET										0x5081 		//LED mode set;
 //#define UAVCAN_TOPIC_ID_LOWMHZ_SET_CMD								0x5082 		//433MHZ mode set cmd;
 //#define UAVCAN_TOPIC_ID_LOWMHZ_TRANSPARENT_TX						0x5083 		//433MHZ 透明传输 发送; ----主机CAN发--MCU串口发给--433M模块--无线发射
@@ -249,12 +255,12 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
 			case UAVCAN_SERVICE_ID_STOP:	
 			  *out_data_type_signature = UAVCAN_SERVICE_STOP_SIGNATURE;	
 			break;
-			case UAVCAN_SERVICE_ID_SWITCH_12V1:
-			  *out_data_type_signature = UAVCAN_SERVICE_ID_SWITCH_12V1_SIGNATURE;
+			case UAVCAN_SERVICE_ID_SetDate:
+			  *out_data_type_signature = UAVCAN_SERVICE_ID_SetDate_SIGNATURE;
 			break;
-			case UAVCAN_SERVICE_ID_SWITCH_POWER:
-				*out_data_type_signature = UAVCAN_SERVICE_ID_SWITCH_POWER_SIGNATURE;
-			break;
+//			case UAVCAN_SERVICE_ID_SWITCH_POWER:
+//				*out_data_type_signature = UAVCAN_SERVICE_ID_SWITCH_POWER_SIGNATURE;
+//			break;
 //			case UAVCAN_SERVICE_ID_READ_PARAM:
 //				*out_data_type_signature = UAVCAN_SERVICE_READ_PARAM_SIGNATURE;
 //			break;
@@ -345,7 +351,7 @@ void CAN_Configuration(void)                              //CAN配置函数
     CAN_InitStructure.CAN_BS1 = CAN_BS1_6tq;  //时间段1为8个时间单位
     CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;  //时间段2为7个时间单位
 
-    CAN_InitStructure.CAN_Prescaler = 4;   
+    CAN_InitStructure.CAN_Prescaler = 6;   
 
 	/*
 	f = 24M/4/(6+5+1)=500K
@@ -584,8 +590,54 @@ void Uavcan_Broadcast(void)
 	
 	CAN_tx_buf[16] = gSensor.Temperaturer.m_Temperaturer & 0xFF;
 	CAN_tx_buf[17] = (gSensor.Temperaturer.m_Temperaturer>>8) & 0xFF;
+	
+	
+	CAN_tx_buf[18] = gSensor.imuData.gyro[0] & 0xFF;
+	CAN_tx_buf[19] = (gSensor.imuData.gyro[0]>>8) & 0xFF;	
+	
+	CAN_tx_buf[20] = gSensor.imuData.gyro[1] & 0xFF;
+	CAN_tx_buf[21] = (gSensor.imuData.gyro[1]>>8) & 0xFF;	
+	
+	CAN_tx_buf[22] = gSensor.imuData.gyro[2] & 0xFF;
+	CAN_tx_buf[23] = (gSensor.imuData.gyro[2]>>8) & 0xFF;	
+	
+	CAN_tx_buf[24] = gSensor.imuData.accel_short[0] & 0xFF;
+	CAN_tx_buf[25] = (gSensor.imuData.accel_short[0]>>8) & 0xFF;	
+	
+	CAN_tx_buf[26] = gSensor.imuData.accel_short[1] & 0xFF;
+	CAN_tx_buf[27] = (gSensor.imuData.accel_short[1]>>8) & 0xFF;
+	
+	CAN_tx_buf[28] = gSensor.imuData.accel_short[2] & 0xFF;
+	CAN_tx_buf[29] = (gSensor.imuData.accel_short[2]>>8) & 0xFF;
 
-	canardBroadcast(&canard, UAVCAN_SERVICE_ID_BROADCAST_SIGNATURE, UAVCAN_TOPIC_ID_AUTO_TDATA, &transfer_id,UAVCAN_NODE_ID_SELF_ID,CAN_tx_buf, 14);
+	CAN_tx_buf[30] = gSensor.imuData.sensor_timestamp & 0xFF;
+	CAN_tx_buf[31] = (gSensor.imuData.sensor_timestamp>>8) & 0xFF;
+	CAN_tx_buf[32] = (gSensor.imuData.sensor_timestamp>>16) & 0xFF;
+	CAN_tx_buf[33] = (gSensor.imuData.sensor_timestamp>>24) & 0xFF;
+
+	CAN_tx_buf[34] = gSensor.Temperaturer.m_Time[6];
+	CAN_tx_buf[35] = gSensor.Temperaturer.m_Time[4];
+	CAN_tx_buf[36] = gSensor.Temperaturer.m_Time[3];
+	CAN_tx_buf[37] = gSensor.Temperaturer.m_Time[2];
+	CAN_tx_buf[38] = gSensor.Temperaturer.m_Time[1];
+	CAN_tx_buf[39] = gSensor.Temperaturer.m_Time[0];
+
+	canardBroadcast(&canard, UAVCAN_SERVICE_ID_BROADCAST_SIGNATURE, UAVCAN_TOPIC_ID_AUTO_TDATA, &transfer_id,31,CAN_tx_buf, 40);
+	for(const CanardCANFrame* txf = NULL; (txf = canardPeekTxQueue(&canard)) != NULL;)  //数据发送
+  {
+		cantxframe.ExtId = txf->id;
+		cantxframe.DLC = txf->data_len;
+		cantxframe.IDE = CAN_ID_EXT;         // 设定消息标识符的类型
+		cantxframe.RTR = CAN_RTR_DATA;       // 设定待传输消息的帧类型
+		memcpy(cantxframe.Data,txf->data, txf->data_len); //拷贝数据
+		const uint8_t TransmitMailbox = CAN_Transmit(CAN1,&cantxframe);
+
+		if(TransmitMailbox != CAN_TxStatus_NoMailBox)   
+	  {
+			canardPopTxQueue(&canard);        
+		}
+	}
+
 }
 
 /****************************************************************************
@@ -598,15 +650,14 @@ void Uavcan_Broadcast(void)
 ****************************************************************************/
 void UavcanFun(void)
 {
-	CanTxMsg cantxframe; 
-
+	 
+	uint8_t error = 0;
 	if( RX_FLAG == 1)
 	{
 		if(RxTransfer.transfer_type == CanardTransferTypeBroadcast)
 		{
 			if(RxTransfer.data_type_id == 0x5002)
 			{
-	
 				;
 			}
 
@@ -658,6 +709,77 @@ void UavcanFun(void)
 					CAN_tx_buf,
 					1);
 					break;
+				
+				case UAVCAN_SERVICE_ID_SetDate:
+				  
+					if(CAN_rx_buf[0]>0x99 || CAN_rx_buf[0]<0x19)  //year
+					{
+
+						error = 1;
+					}
+					else if(CAN_rx_buf[1] >7)   //day
+						error = 1;
+					else if(CAN_rx_buf[2] > 0x12)  //month
+						error = 1;
+					else if(CAN_rx_buf[3] > 0x31)   //date 
+						error = 1;
+					else if (CAN_rx_buf[4] >0x24)   //hour
+						error = 1;
+					else if(CAN_rx_buf[5]> 0x59 || CAN_rx_buf[6]> 0x59) //minute
+						error =1;
+					if(error ==1)
+					{
+						CAN_tx_buf[0] = 0x02;   //参数设置有误
+						canardRequestOrRespond(&canard,
+						RxTransfer.source_node_id,
+						UAVCAN_SERVICE_ID_SetDate_SIGNATURE,
+						UAVCAN_SERVICE_ID_SetDate,
+						&RxTransfer.transfer_id,
+						RxTransfer.priority,
+						CanardResponse,
+						CAN_tx_buf,
+						1);			
+						break;
+					}
+					else
+					{
+						DS1302_DateSetup(CAN_rx_buf);
+						Readburst(CAN_tx_buf);
+						printf("DS1302 is set at Time:20%d年%d月%d日%d时%d分%d秒\r\n",	CAN_tx_buf[6],
+																													CAN_tx_buf[4],
+																													CAN_tx_buf[3],
+																													CAN_tx_buf[2],
+																													CAN_tx_buf[1],
+																													CAN_tx_buf[0]);
+						if (CAN_tx_buf[6] == CAN_rx_buf[0] && CAN_tx_buf[1] == CAN_rx_buf[5])
+						{
+							CAN_tx_buf[0] = 0x00;   //参数设置成功
+							canardRequestOrRespond(&canard,
+							RxTransfer.source_node_id,
+							UAVCAN_SERVICE_ID_SetDate_SIGNATURE,
+							UAVCAN_SERVICE_ID_SetDate,
+							&RxTransfer.transfer_id,
+							RxTransfer.priority,
+							CanardResponse,
+							CAN_tx_buf,
+							1);			
+						}			
+						else
+						{
+							CAN_tx_buf[0] = 0x01;   //参数设置失败
+							canardRequestOrRespond(&canard,
+							RxTransfer.source_node_id,
+							UAVCAN_SERVICE_ID_SetDate_SIGNATURE,
+							UAVCAN_SERVICE_ID_SetDate,
+							&RxTransfer.transfer_id,
+							RxTransfer.priority,
+							CanardResponse,
+							CAN_tx_buf,
+							1);			
+						}								
+					}
+				break;
+				
 
 			}
 		}
@@ -981,12 +1103,17 @@ CanRxMsg RxMessage;
 void USB_LP_CAN1_RX0_IRQHandler(void)
 {
   //CanRxMsg RxMessage;
+	BaseType_t xHigherPriorityTaskWoken, Result;
   CanardCANFrame rx_frame;
+	xHigherPriorityTaskWoken = pdFALSE;
   CAN_Receive(CAN1,CAN_FIFO0,&RxMessage);//读取数据	
   rx_frame.id = RxMessage.ExtId;
   rx_frame.data_len = RxMessage.DLC;
 
   memcpy(rx_frame.data,RxMessage.Data,RxMessage.DLC); //拷贝数据	 
 	canardHandleRxFrame(&canard, &rx_frame, 1000);
+	Result = xSemaphoreGiveFromISR( BinarySemaphore, &xHigherPriorityTaskWoken );
+	if(Result == pdTRUE)
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 /******************************************************************************/

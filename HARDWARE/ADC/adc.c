@@ -95,15 +95,15 @@ void MBDMA_Init(void)
 
 void DMA1_Channel1_IRQHandler(void)
 {
-	BaseType_t Result, xHigherPriorityTaskWoken ;
-	xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t Result, xHigherPriorityTaskWoken ;
+//	xHigherPriorityTaskWoken = pdFALSE;
    if(DMA_GetITStatus(DMA1_IT_TC1))
 	{  
 		DMA_Cmd(DMA1_Channel1, DISABLE);
 		Get_ADC_Value();
-		Result = xEventGroupSetBitsFromISR(EventGroupHandle,INFRA_EVENTBIT,&xHigherPriorityTaskWoken);
-		if(Result != pdFAIL)
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+//		Result = xEventGroupSetBitsFromISR(EventGroupHandle,INFRA_EVENTBIT,&xHigherPriorityTaskWoken);
+//		if(Result != pdFAIL)
+//			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		DMA_SetCurrDataCounter(DMA1_Channel1,NumberOfSamplingChannel);
 		DMA_ClearITPendingBit(DMA1_IT_TC1);
 		DMA_ClearFlag(DMA1_IT_TC1);   

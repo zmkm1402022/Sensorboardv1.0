@@ -3,6 +3,7 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "header.h"
 #include "ml_math_func.h"
+
 void DMPSetup(void)
 {
 	u8 errcode, sensor;

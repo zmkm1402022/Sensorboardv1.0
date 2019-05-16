@@ -9,6 +9,7 @@
 #include "stm32f10x.h"
 #include "usart.h"
 #include "can.h"
+#include "canard.h"
 #include "delay.h"
 #include "ds18b20.h"
 #include "adc.h"
@@ -125,6 +126,9 @@ typedef struct
 	long temperature;
 	unsigned long sensor_timestamp;
 	u8 ID;
+	uint32_t error_cnt;
+	u8 startup_flag;
+	uint16_t imu_pwr_rst_cnt;
 
 }GlobMPU9250;
 
@@ -161,6 +165,17 @@ typedef struct
 }GlobalSensor;
 
 
+//struct platform_data_s {
+//    signed char orientation[9];
+//};
+
+//struct platform_data_s gyro_pdata = {
+//    .orientation = { 1, 0, 0,
+//                     0, 1, 0,
+//                     0, 0, 1}
+//};
+//extern struct platform_data_s gyro_pdata;
+extern struct int_param_s int_param;
 extern GlobalSensor gSensor;
 extern volatile uint32_t g_ul_ms_ticks;
 extern EventGroupHandle_t EventGroupHandle;

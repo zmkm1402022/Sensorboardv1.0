@@ -102,41 +102,41 @@ void Init_DS1302(void)
 {
 	DS1302_PHY_Init();
 	
-	IO_IN()	;
-	delay_us(10);
-	Rst1302();
-	Write1302(0x8e);
-	Write1302(0x00);
-	End1302();
-	delay_us(10);
-	Rst1302();
-	Write1302(0x80);
-	Write1302(0x00);
-	End1302();
-	Rst1302();
-	Write1302(0x82);
-	Write1302(0x26);
-	End1302();
-	Rst1302();
-	Write1302(0x84);
-	Write1302(0x21);
-	End1302();
-	Rst1302();
-	Write1302(0x86);
-	Write1302(0x13);
-	End1302();
-	Rst1302();
-	Write1302(0x88);
-	Write1302(0x10);
-	End1302();
-	Rst1302();
-	Write1302(0x8A);
-	Write1302(0x07);
-	End1302();
-	Rst1302();
-	Write1302(0x8C);
-	Write1302(0x18);
-	End1302();
+//	IO_IN()	;
+//	delay_us(10);
+//	Rst1302();
+//	Write1302(0x8e);
+//	Write1302(0x00);
+//	End1302();
+//	delay_us(10);
+//	Rst1302();
+//	Write1302(0x80);
+//	Write1302(0x00);
+//	End1302();
+//	Rst1302();
+//	Write1302(0x82);
+//	Write1302(0x26);
+//	End1302();
+//	Rst1302();
+//	Write1302(0x84);
+//	Write1302(0x21);
+//	End1302();
+//	Rst1302();
+//	Write1302(0x86);
+//	Write1302(0x13);
+//	End1302();
+//	Rst1302();
+//	Write1302(0x88);
+//	Write1302(0x10);
+//	End1302();
+//	Rst1302();
+//	Write1302(0x8A);
+//	Write1302(0x07);
+//	End1302();
+//	Rst1302();
+//	Write1302(0x8C);
+//	Write1302(0x18);
+//	End1302();
 //	Rst1302();
 //	Write1302(0xbe);
 //	Write1302(0x00); //second
@@ -164,6 +164,45 @@ void Init_DS1302(void)
 //	Write1320(Write_Sec,0x59);
 
 //	Write1320(Write_Prot,0x80);
+}
+
+void DS1302_DateSetup(u8 *date)
+{
+	IO_IN()	;
+	delay_us(10);
+	Rst1302();
+	Write1302(0x8e);
+	Write1302(0x00);
+	End1302();
+	delay_us(10);
+	Rst1302();
+	Write1302(0x80);  // 秒
+	Write1302(*(date+6));
+	End1302();
+	Rst1302();
+	Write1302(0x82);
+	Write1302(*(date+5));  //分钟
+	End1302();
+	Rst1302();
+	Write1302(0x84);
+	Write1302(*(date+4));  //小时
+	End1302();
+	Rst1302();
+	Write1302(0x86);
+	Write1302(*(date+3));  //日
+	End1302();
+	Rst1302();
+	Write1302(0x88);
+	Write1302(*(date+2));  //月
+	End1302();
+	Rst1302();
+	Write1302(0x8A);
+	Write1302(*(date+1));   //星期几
+	End1302();
+	Rst1302();
+	Write1302(0x8C);
+	Write1302(*date);   //年 
+	End1302();
 }
 
 void Readburst(unsigned char  data[])

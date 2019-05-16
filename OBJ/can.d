@@ -64,3 +64,5 @@
 ..\obj\can.o: ..\FreeRTOS\include\task.h
 ..\obj\can.o: ..\FreeRTOS\include\list.h
 ..\obj\can.o: ..\HARDWARE\CAN\can.h
+..\obj\can.o: ..\FreeRTOS\include\semphr.h
+..\obj\can.o: ..\FreeRTOS\include\queue.h

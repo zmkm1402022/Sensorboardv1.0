@@ -62,6 +62,8 @@
 ..\obj\main.o: ..\FreeRTOS\include\task.h
 ..\obj\main.o: ..\FreeRTOS\include\list.h
 ..\obj\main.o: ..\HARDWARE\LED\led.h
+..\obj\main.o: ..\FreeRTOS\include\semphr.h
+..\obj\main.o: ..\FreeRTOS\include\queue.h
 ..\obj\main.o: ..\HARDWARE\MPU9250\inv_mpu.h
 ..\obj\main.o: ..\HARDWARE\MPU9250\mllite\data_builder.h
 ..\obj\main.o: ..\HARDWARE\MPU9250\include\mltypes.h
